@@ -157,6 +157,23 @@ h1{font-family:'Playfair Display',serif;font-size:1.8rem;letter-spacing:-.02em;m
   </div>
 </div>
 
+<!-- ADD STAFF MODAL -->
+<div class="overlay" id="staff-ov" onclick="if(event.target.id==='staff-ov')closeAddStaff()">
+  <div class="modal" style="max-width:420px">
+    <h2>＋ Add Staff Member</h2>
+    <div class="fr"><label>Name</label>
+      <input type="text" id="sn-name" placeholder="First name" style="width:100%;font-family:'DM Mono',monospace;font-size:.76rem;padding:8px 10px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--text);outline:none;">
+    </div>
+    <div class="fr"><label>Group</label>
+      <select id="sn-group"></select>
+    </div>
+    <div class="mfooter">
+      <button class="btn ghost" onclick="closeAddStaff()">Cancel</button>
+      <button class="btn green" onclick="submitStaff()">Add staff member</button>
+    </div>
+  </div>
+</div>
+
 <!-- PIN MODAL -->
 <div class="overlay" id="pin-ov" onclick="if(event.target.id==='pin-ov')closePinModal()">
   <div class="modal" style="max-width:340px">
@@ -324,7 +341,7 @@ function lock(){isManager=false;renderMgrCtrl();rebuild();toast('🔒 Locked');}
 function renderMgrCtrl(){
   const el=document.getElementById('mgr-controls');
   el.innerHTML=isManager
-    ?'<button class="btn green" onclick="openAdd()">＋ Add Holiday</button> <button class="btn lock" onclick="lock()">🔓 Manager — click to lock</button>'
+    ?'<button class="btn green" onclick="openAdd()">＋ Add Holiday</button> <button class="btn ghost" onclick="openAddStaff()">＋ Add Staff</button> <button class="btn lock" onclick="lock()">🔓 Manager — click to lock</button>'
     :'<button class="btn ghost" onclick="openPin()">🔒 Manager Login</button>';
 }
 
@@ -390,6 +407,36 @@ function approveHol(name,id){
   const h=info.m.hols.find(h=>h.id===id);if(!h)return;
   h.p=false;
   saveData();rebuild();toast('✓ Approved — '+name+': '+fmtD(h.s)+(h.s!==h.e?'–'+fmtD(h.e):''),true);
+}
+
+// ── ADD STAFF ─────────────────────────────────────────────────────────────────
+function openAddStaff(){
+  const sel=document.getElementById('sn-group');
+  sel.innerHTML='';
+  locs.forEach(loc=>{
+    loc.teams.forEach(t=>{
+      const o=document.createElement('option');
+      o.value=t.group;o.textContent=t.group+' ('+loc.name+')';
+      sel.appendChild(o);
+    });
+  });
+  document.getElementById('sn-name').value='';
+  document.getElementById('staff-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('sn-name').focus(),120);
+}
+function closeAddStaff(){document.getElementById('staff-ov').classList.remove('open');}
+function submitStaff(){
+  const name=document.getElementById('sn-name').value.trim();
+  const group=document.getElementById('sn-group').value;
+  if(!name){alert('Please enter a name.');return;}
+  if(allM().find(x=>x.m.name.toLowerCase()===name.toLowerCase())){alert('A staff member named "'+name+'" already exists.');return;}
+  let added=false;
+  locs.forEach(loc=>loc.teams.forEach(t=>{
+    if(t.group===group){t.members.push({name:name,hols:[]});added=true;}
+  }));
+  if(!added){alert('Could not find that group.');return;}
+  saveData();closeAddStaff();rebuild();
+  toast('✓ Added '+name+' to '+group,true);
 }
 
 // ── VIEWS ─────────────────────────────────────────────────────────────────────

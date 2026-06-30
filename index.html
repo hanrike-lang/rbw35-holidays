@@ -438,6 +438,14 @@ function submitStaff(){
   saveData();closeAddStaff();rebuild();
   toast('✓ Added '+name+' to '+group,true);
 }
+function removeStaff(name){
+  const info=findM(name);if(!info)return;
+  const holCount=info.m.hols.length;
+  const warn=holCount?' This will also delete '+holCount+' holiday'+(holCount!==1?'s':'')+' on record for them.':'';
+  if(!confirm('Remove '+name+' from '+info.t.group+'?'+warn))return;
+  info.t.members=info.t.members.filter(m=>m.name!==name);
+  saveData();rebuild();toast('Removed '+name);
+}
 
 // ── VIEWS ─────────────────────────────────────────────────────────────────────
 function setView(v,btn){
@@ -581,7 +589,10 @@ function buildSummary(){
     const tbody=document.createElement('tbody');
     loc.teams.forEach(team=>team.members.forEach(member=>{
       const row=document.createElement('tr');
-      row.innerHTML='<td><div class="pl"><div class="gd" style="background:'+team.color+'"></div>'+member.name+'</div></td>'
+      const nameCell='<div class="pl"><div class="gd" style="background:'+team.color+'"></div>'+member.name
+        +(isManager?' <button class="pill-x" title="Remove staff member" onclick="removeStaff(\''+member.name.replace(/'/g,"\\'")+'\')" style="margin-left:4px">×</button>':'')
+        +'</div>';
+      row.innerHTML='<td>'+nameCell+'</td>'
         +'<td style="color:'+team.color+';font-size:.6rem;text-transform:uppercase;letter-spacing:.07em">'+team.group+'</td>';
       const htd=document.createElement('td');
       if(!member.hols.length){htd.innerHTML='<span style="color:var(--muted);font-size:.62rem">No holidays yet</span>';}
